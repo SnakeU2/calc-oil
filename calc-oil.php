@@ -24,11 +24,10 @@ namespace calcOil{
         });
         array_shift($csv); # remove column header it stat        
     }
-}
+}   
 
 namespace {
-    calcOil\parse_oils();
-    
+    calcOil\parse_oils();    
 }
  
 
