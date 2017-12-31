@@ -8,23 +8,28 @@
  * 
  */
 
-function parse_oils() use $wpdb{
-    $csv = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
-    array_walk($csv, function(&$a) use ($csv) {
-        $a = array_combine($csv[0], $a);
-        $acids = array();
-        foreach(range(1,16) as $i){
-            $acids[$i] = $a[$i];
-            unset ($a[$i]);
-        }
-        $a['acids'] = json_encode($acids);
-        
-    });
-    array_shift($csv); # remove column header it stat
-    
+namespace calcOil{
+    function parse_oils(){
+        global $wpdb;
+        $csv = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
+        array_walk($csv, function(&$a) use ($csv) {
+            $a = array_combine($csv[0], $a);
+            $acids = array();
+            foreach(range(1,16) as $i){
+                $acids[$i] = $a[$i];
+                unset ($a[$i]);
+            }
+            $a['acids'] = json_encode($acids);
+            
+        });
+        array_shift($csv); # remove column header it stat        
+    }
 }
 
-parse_oils();
+namespace {
+    calcOil\parse_oils();
+    
+}
  
 
  /*
