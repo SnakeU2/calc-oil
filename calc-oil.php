@@ -13,64 +13,49 @@
 
     function co_install(){
         global $wpdb;
-        //if (!is_admin() || (int)get_option('Calc_Oil_Installed' === 1) return false;
         //Check installed 
-        
-        
+        if (!is_admin() || (int)get_option('Calc_Oil_Installed' === 1) return false;
+        //Creating tables & insert data
         if(is_admin()){
-            if(!is_file(__DIR__ . '/calc-oil.sql') || !is_file(__DIR__ .'/oils.csv')){                
-                trigger_error('Отсутствуют необходимые файлы<br>Пожалуйста, переустановите плагин', E_USER_ERROR);                
+            if(!is_file(__DIR__ . '/calc-oil.sql')){                
+                trigger_error('Отсутствует файл начальных данных calc-oil.sql<br>Пожалуйста, переустановите плагин', E_USER_ERROR);                
             }       
             $queries = file(__DIR__ . '/calc-oil.sql');
             foreach($queries as $query){
                 $wpdb->query($query);
             }
-            
-            //Insert oils from oils.csv
-            //$oils = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
-            //array_walk($oils, function(&$a) use ($oils) {
-                //$a = array_combine($oils[0], $a);
-                //$acids = array();
-                //foreach(range(1,16) as $i){
-                    //$acids[$i] = $a[$i];
-                    //unset ($a[$i]);
-                //}
-                //$a['acids'] = json_encode($acids);
-                
-            //});
-            //array_shift($oils); # remove column header it stat
-            
-            
-            add_option('Calc_Oil_Installed',1);
-           
+            add_option('Calc_Oil_Installed',1);           
         }        
         
     }
 
-    register_deactivation_hook( __FILE__, 'parse_oils' );
-    function parse_oils(){
-        global $wpdb;
-        $csv = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
-        array_walk($csv, function(&$a) use ($csv) {
-            $a = array_combine($csv[0], $a);
-            $acids = array();
-            foreach(range(1,16) as $i){
-                $acids[$i] = $a[$i];
-                unset ($a[$i]);
-            }
-            $a['acids'] = json_encode($acids);
+    
+
+    //TODO: carefully remove this after debugging!
+    //register_deactivation_hook( __FILE__, 'parse_oils' );
+    //function parse_oils(){
+        //global $wpdb;
+        //$csv = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
+        //array_walk($csv, function(&$a) use ($csv) {
+            //$a = array_combine($csv[0], $a);
+            //$acids = array();
+            //foreach(range(1,16) as $i){
+                //$acids[$i] = $a[$i];
+                //unset ($a[$i]);
+            //}
+            //$a['acids'] = json_encode($acids);
             
-        });
-        //array_shift($csv); # remove column header it stat
-        $fp = fopen(__DIR__ . '/oils_norm.csv', 'w');
+        //});
+        ////array_shift($csv); # remove column header it stat
+        //$fp = fopen(__DIR__ . '/oils_norm.csv', 'w');
 
-        foreach ($csv as $fields) {
-            fputcsv($fp, $fields);
-        }
+        //foreach ($csv as $fields) {
+            //fputcsv($fp, $fields);
+        //}
 
-        fclose($fp);
+        //fclose($fp);
         
-    }
+    //}
     
 
 
@@ -84,16 +69,14 @@
 
  
 
- /*
-  * TODO: activate hook - creating tables if not exists
-  * TODO: remove hook - remove tables
-  * TODO: tables data  
+ /*  
+  * TODO: remove hook - remove tables  
   * TODO: output
   * TODO: shortcode
   * TODO: widget
   *
   * what I know about git commands:
-  * 1. git init - startin g work? create master branch
+  * 1. git init - startin git work, create master branch
   * 2. git add <file1>..<fileN> - add files in current dir to local git repo. Use mask.
   * 3. git status - show not committed|changed|not addedd files
   * 4. git branch (-a) - show all local branches. -a - all branches w. remote
