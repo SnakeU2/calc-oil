@@ -8,7 +8,7 @@
  * 
  */
 
-
+/*----------------------Activation------------------*/
     register_activation_hook( __FILE__, 'co_install');
 
     function co_install(){
@@ -29,44 +29,8 @@
         
     }
 
-    
-
-    //TODO: carefully remove this after debugging!
-    //register_deactivation_hook( __FILE__, 'parse_oils' );
-    //function parse_oils(){
-        //global $wpdb;
-        //$csv = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
-        //array_walk($csv, function(&$a) use ($csv) {
-            //$a = array_combine($csv[0], $a);
-            //$acids = array();
-            //foreach(range(1,16) as $i){
-                //$acids[$i] = $a[$i];
-                //unset ($a[$i]);
-            //}
-            //$a['acids'] = json_encode($acids);
-            
-        //});
-        ////array_shift($csv); # remove column header it stat
-        //$fp = fopen(__DIR__ . '/oils_norm.csv', 'w');
-
-        //foreach ($csv as $fields) {
-            //fputcsv($fp, $fields);
-        //}
-
-        //fclose($fp);
-        
-    //}
-    
-
-
-
-
-  
-    
-
-
-    //calcOil\parse_oils();
-
+/*--------------------Admin section----------------------*/
+ 
  
 
  /*  
