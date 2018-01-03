@@ -8,7 +8,46 @@
  * 
  */
 
-namespace calcOil{
+
+    register_activation_hook( __FILE__, 'co_install');
+
+    function co_install(){
+        global $wpdb;
+        //if (!is_admin() || (int)get_option('Calc_Oil_Installed' === 1) return false;
+        //Check installed 
+        
+        
+        if(is_admin()){
+            if(!is_file(__DIR__ . '/calc-oil.sql') || !is_file(__DIR__ .'/oils.csv')){                
+                trigger_error('Отсутствуют необходимые файлы<br>Пожалуйста, переустановите плагин', E_USER_ERROR);                
+            }       
+            $queries = file(__DIR__ . '/calc-oil.sql');
+            foreach($queries as $query){
+                $wpdb->query($query);
+            }
+            
+            //Insert oils from oils.csv
+            //$oils = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
+            //array_walk($oils, function(&$a) use ($oils) {
+                //$a = array_combine($oils[0], $a);
+                //$acids = array();
+                //foreach(range(1,16) as $i){
+                    //$acids[$i] = $a[$i];
+                    //unset ($a[$i]);
+                //}
+                //$a['acids'] = json_encode($acids);
+                
+            //});
+            //array_shift($oils); # remove column header it stat
+            
+            
+            add_option('Calc_Oil_Installed',1);
+           
+        }        
+        
+    }
+
+    register_deactivation_hook( __FILE__, 'parse_oils' );
     function parse_oils(){
         global $wpdb;
         $csv = array_map('str_getcsv', file(__DIR__.'/oils.csv'));    
@@ -22,16 +61,27 @@ namespace calcOil{
             $a['acids'] = json_encode($acids);
             
         });
-        array_shift($csv); # remove column header it stat        
-    }
-}   
+        //array_shift($csv); # remove column header it stat
+        $fp = fopen(__DIR__ . '/oils_norm.csv', 'w');
 
-namespace {
-    calcOil\parse_oils();
-    //just check commit
-    //another check commit
-     
-}
+        foreach ($csv as $fields) {
+            fputcsv($fp, $fields);
+        }
+
+        fclose($fp);
+        
+    }
+    
+
+
+
+
+  
+    
+
+
+    //calcOil\parse_oils();
+
  
 
  /*
