@@ -14,7 +14,7 @@
     function co_install(){
         global $wpdb;
         //Check installed 
-        if (!is_admin() || (int)get_option('Calc_Oil_Installed' === 1) return false;
+        if (!is_admin() || (int)get_option('Calc_Oil_Installed' === 1)) return false;
         //Creating tables & insert data
         if(is_admin()){
             if(!is_file(__DIR__ . '/calc-oil.sql')){                
