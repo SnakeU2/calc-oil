@@ -22,6 +22,7 @@
             }       
             $queries = file(__DIR__ . '/calc-oil.sql');
             foreach($queries as $query){
+                $query = str_replace("wp_co_",$wpdb->prefix."co_");
                 $wpdb->query($query);
             }
             add_option('Calc_Oil_Installed',1);           
@@ -38,9 +39,42 @@ add_action('admin_menu', function (){
 });
 
 
-function get_oils() { ?>
-    <div class="container">
+function get_oils() {
+    global $wpdb;
+    $oils = $wpdb->get_results('SELECT * FROM '.$wpdb->prefix . 'co_oils');
+    ?>
+    <div class="container-fluide">
         <h2><?php echo get_admin_page_title() ?></h2>
+        <nav class="navbar navbar-light bg-light justify-content-between">
+          <button id="do-ajax" class="btn btn-outline-success" type="button">Main button</button>
+          <form class="form-inline">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" >Search</button>
+          </form>
+        </nav>
+        <table class="table  table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Наименование</th>
+                    <th>Группа</th>
+                    <th>Йод</th>
+                    <th>Состав</th>
+                </tr>
+            </thead>
+            <tbody> 
+                <?php foreach ($oils as $oil): ?>
+                <tr>
+                    <td><?php echo $oil->id; ?></td>
+                    <td><?php echo $oil->name; ?></td>
+                    <td><?php echo $oil->group; ?></td>
+                    <td><?php echo $oil->iodine; ?></td>
+                    <td></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+            
+        </table>
     </div>
 
 <?php
@@ -57,17 +91,45 @@ function calc_oil_adm_scripts(){
 	wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');	
     wp_register_script( 'popper',plugins_url('/bootstrap/js/popper.min.js',__FILE__),array('jquery'));
     wp_register_script( 'bootstrap', plugins_url('/bootstrap/js/bootstrap.min.js',__FILE__),array('jquery'));
-    //wp_register_script( 'mv-script', $theme_uri.'/js/mv.js',array('jquery'));
+    wp_register_script( 'co_admin-script', plugins_url('/js/co_admin.js',__FILE__),array('jquery'));
   
 	wp_enqueue_script( 'jquery' );
 	wp_enqueue_script( 'popper' );
 	wp_enqueue_script( 'bootstrap' );
-	//wp_enqueue_script( 'mv-script' );
+	wp_enqueue_script( 'co_admin-script' );
+    wp_localize_script('co_admin-script', 'co_admin_ajax', 
+		array(			
+			'nonce' => wp_create_nonce('oc-adm-ajax-nonce')
+		)
+	);
 
 }
 
+add_action('wp_ajax_restruct_tabs', function(){
+   
+    echo json_encode("Something done. But result?");
+    wp_die();
+});
+
+/*
+ *
+ *
+ *
+ *
+SELECT id, `name` as acid, 0 as percent FROM `wp_co_acids` as `a` 
+WHERE a.id NOT IN (SELECT id_acid FROM `wp_co_oils_acids` as oa WHERE oa.id_oil =61)
+UNION
+SELECT id_acid as id, `name`as acid, ROUND(`percent`,2) FROM `wp_co_acids` as `a` 
+LEFT JOIN `wp_co_oils_acids` as oa ON `a`.id = oa.id_acid
+WHERE oa.id_oil =61 ORDER BY id
+ *
+ * /
+
  /*  
-  * TODO: remove hook - remove tables  
+  * TODO: pagination in admin table
+  * TODO: float form for edit oil
+  * TODO: filters in admin table
+  * TODO: edit acids list
   * TODO: output
   * TODO: shortcode
   * TODO: widget
