@@ -1,14 +1,20 @@
 jQuery('document').ready(function($){
-    $('#do-ajax').on('click',function(){
-        $.post(ajaxurl,{
-            action: 'restruct_tabs',
-            nonce: co_admin_ajax.nonce
-        },false,'json')
-        .done(function(result){
-            console.log(result);
-        })
-        .fail(function(responce){
-            console.log(responce);
+    $('.oil-edit').each(function(){
+        $(this).on('click',function(){
+            $.post(ajaxurl,{
+                'action':'get_oil',
+                'nonce':co_admin_ajax.nonce,
+                'oil_id':$(this).attr('btn-data')
+            },false,'json')
+            .done(function(result){
+                if(result.length){
+                    order = {'poly':[],'mono':[],'sat':[]};
+                    //result.each(function(acid){
+                        
+                    //})
+                    $('#co_oils_modal').modal('toggle');
+                }
+            });
         })
     });
 });

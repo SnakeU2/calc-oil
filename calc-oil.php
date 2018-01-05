@@ -59,7 +59,7 @@ function get_oils() {
                     <th>Наименование</th>
                     <th>Группа</th>
                     <th>Йод</th>
-                    <th>Состав</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody> 
@@ -69,14 +69,66 @@ function get_oils() {
                     <td><?php echo $oil->name; ?></td>
                     <td><?php echo $oil->group; ?></td>
                     <td><?php echo $oil->iodine; ?></td>
-                    <td></td>
+                    <td><button class="btn btn-success oil-edit" btn-data="<?php echo $oil->id; ?>">Редактировать</td>
                 </tr>
                 <?php endforeach; ?>
-            </tbody>
-            
+            </tbody>            
         </table>
+        <!--acids modal-->
+        <div class="modal" id="co_oils_modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Редактирование</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-row align-items-center">
+                            <div class="col-auto">
+                                <input name=" " value="" placeholder="Масло...">
+                            </div>                            
+                            <div class="col-auto">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Группа</label>
+                                <select class="custom-select mr-sm-2" id="inlineFormCustomSelect">
+                                    <option value="b0">b0</option>
+                                    <option value="pf1">pf1</option>
+                                    <option value="pf2">pf2</option>
+                                    <option value="b1">b1</option>
+                                    <option value="b2">b2</option>
+                                    <option value="b3">b3</option>
+                                    <option value="a1">a1</option>
+                                    <option value="a2">a2</option>
+                                    <option value="a3">a3</option>
+                                    <option value="z">z</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row align-items-center">
+                            <table class="table table-striped ">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Наименование</th>
+                                        <th>%</th>                                        
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary">Cохранить</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--end acids modal-->
     </div>
-
+    
 <?php
 
 }
@@ -110,20 +162,19 @@ add_action('wp_ajax_restruct_tabs', function(){
     echo json_encode("Something done. But result?");
     wp_die();
 });
+add_action('wp_ajax_get_oil', function() use ($wpdb){
+    check_ajax_referer( 'oc-adm-ajax-nonce', 'nonce' );
+    $id = intval( $_POST['oil_id'] );
+    $res = $wpdb->get_results("SELECT id, `name` as acid, a.`type`, 0 as percent FROM `wp_co_acids` as `a` 
+                                WHERE a.id NOT IN (SELECT id_acid FROM `wp_co_oils_acids` as oa WHERE oa.id_oil =".$id.")
+                                UNION
+                                SELECT id_acid as id, `name`as acid, a.`type`, ROUND(`percent`,2) FROM `wp_co_acids` as `a` 
+                                LEFT JOIN `wp_co_oils_acids` as oa ON `a`.id = oa.id_acid
+                                WHERE oa.id_oil =".$id." ORDER BY `type`,id");
+    echo json_encode($res);
+    wp_die();
+});
 
-/*
- *
- *
- *
- *
-SELECT id, `name` as acid, 0 as percent FROM `wp_co_acids` as `a` 
-WHERE a.id NOT IN (SELECT id_acid FROM `wp_co_oils_acids` as oa WHERE oa.id_oil =61)
-UNION
-SELECT id_acid as id, `name`as acid, ROUND(`percent`,2) FROM `wp_co_acids` as `a` 
-LEFT JOIN `wp_co_oils_acids` as oa ON `a`.id = oa.id_acid
-WHERE oa.id_oil =61 ORDER BY id
- *
- * /
 
  /*  
   * TODO: pagination in admin table
