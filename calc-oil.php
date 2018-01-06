@@ -54,16 +54,35 @@ add_action('admin_menu', function (){
 
 function get_oils_list() { //oils (main) admin page 
     global $wpdb;
-    $oils = $wpdb->get_results('SELECT * FROM '.$wpdb->prefix . 'co_oils');
+    $where_c = ($_GET['search'])?" WHERE `name` LIKE '%".$_GET['search']."%' ":" ";
+    //pagination
+    $pagenum = isset( $_GET['pagenum'] ) ? absint( $_GET['pagenum'] ) : 1;
+    $limit = 25; // number of rows in page
+    $offset = ( $pagenum - 1 ) * $limit;
+    $total = $wpdb->get_var( "SELECT COUNT(`id`) FROM {$wpdb->prefix}co_oils".$where_c );
+    $num_of_pages = ceil( $total / $limit );
+    $page_links = paginate_links( array(
+            'base' => add_query_arg( 'pagenum', '%#%' ),
+            'format' => '',
+            'prev_text' => __( '&laquo;', 'text-domain' ),
+            'next_text' => __( '&raquo;', 'text-domain' ),
+            'total' => $num_of_pages,
+            'current' => $pagenum
+            
+        ) );
+    $query = 'SELECT * FROM '.$wpdb->prefix . 'co_oils '.$where_c.' LIMIT '.$offset.", ".$limit;
+    $oils = $wpdb->get_results($query);
+    
     ?>
     <div class="container-fluide">
-        <h2><?php echo get_admin_page_title() ?></h2>
-        <nav class="navbar navbar-light bg-light justify-content-between">
-          <button id="do-ajax" class="btn btn-outline-success" type="button">Main button</button>
-          <form class="form-inline">
-            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success my-2 my-sm-0" >Search</button>
+        <h2><?php echo get_admin_page_title() ?></h2>       
+        <nav class="navbar navbar-light bg-light justify-content-between">          
+          <form class="form-inline" method="GET">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" name="search" value="<?php echo $_GET['search'];?>">
+            <input type="hidden" name="page" value="calc-oils">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Поиск</button>
           </form>
+          <button class="btn btn-primary" id="add-oil">Добавить масло</button>
         </nav>
         <table class="table  table-striped">
             <thead class="thead-dark">
@@ -71,7 +90,7 @@ function get_oils_list() { //oils (main) admin page
                     <th>#</th>
                     <th>Наименование</th>
                     <th>Группа</th>
-                    <th>Йод</th>
+                    <th>Йодное число</th>
                     <th></th>
                 </tr>
             </thead>
@@ -87,6 +106,14 @@ function get_oils_list() { //oils (main) admin page
                 <?php endforeach; ?>
             </tbody>            
         </table>
+        <?php
+        if ( $page_links) : $paged = ( get_query_var('paged') == 0 ) ? 1 : get_query_var('paged');?>
+        <div class="container"><div class="d-flex justify-content-center">
+            <div class="tablenav"><div class="tablenav-pages" style="margin: 1em 0">
+            <?php echo $page_links; ?>
+            </div></div>
+        </div></div>
+        <?php endif; ?>
         <!--acids modal-->
         <div class="modal" id="co_oils_modal" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
@@ -98,25 +125,25 @@ function get_oils_list() { //oils (main) admin page
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div class="form-row align-items-center">
+                        <div class="form-group row align-items-center">
                             <div class="col-12">
                                 <input id="co_oil_name" value="" class="form-control" placeholder="Масло...">
                             </div>
                         </div>
-                        <div class="form-row align-items-center">
+                        <div class="form-group row align-items-center">
                             <div class="col-auto">
                                 <label class="mr-sm-2" for="co_oil_group">Группа</label>
                                 <select class="form-control custom-select mr-sm-2" id="co_oil_group">                                    
                                 </select>
                             </div>
                             <div class="col-auto">
-                                <label class="mr-sm-2" for="co_oil_iodine">Йод</label>
-                                <input  class="form-control" type="text" id="co_oil_iodine">                                    
+                                <label class="mr-sm-2" for="co_oil_iodine">Йодное число</label>
+                                <input class="form-control" type="text" id="co_oil_iodine">                                                                   
                             </div>
                         </div>
-                        <div class="form-row align-items-center">
+                        <div class="form-group row align-items-center">
                             <table class="table table-striped" id="co_acids_table">
-                                <thead class="thead-dark">
+                                <thead>
                                     <tr>
                                         <th>#</th>
                                         <th>Наименование</th>
@@ -142,7 +169,7 @@ function get_oils_list() { //oils (main) admin page
 add_action('wp_ajax_get_oils', function() use ($wpdb){ //get oils as json object
     $oils = $wpdb->get_results("SELECT * FROM `".$wpdb->prefix."co_oils`");
     foreach ($oils as &$oil){        
-        $oil->acids = $wpdb->get_results("SELECT id_acid as id, percent FROM `".$wpdb->prefix."co_oils_acids` WHERE id_oil ='".$oil->id."'");
+        $oil->acids = $wpdb->get_results("SELECT id_acid as id, ROUND(percent,2) as percent FROM `".$wpdb->prefix."co_oils_acids` WHERE id_oil ='".$oil->id."'");
     }
 
     $query = "SELECT * FROM `".$wpdb->prefix."co_acids`";
@@ -171,9 +198,9 @@ add_action('wp_ajax_get_oils', function() use ($wpdb){ //get oils as json object
 /*--------------------------frontend-----------------------*/
 
  /*  
-  * TODO: pagination in admin table
-  * TODO: float form for edit oil
-  * TODO: filters in admin table
+  * 
+  * TODO: save oil
+  * 
   * TODO: edit acids list
   * TODO: output
   * TODO: shortcode

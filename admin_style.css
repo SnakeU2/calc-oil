@@ -9,6 +9,23 @@
     vertical-align: inherit;
 }
 
+tbody#polyunsaturated tr{
+    background-color: #9b96e4c7;    
+}
+
+tbody#monounsaturated tr{
+    background-color: #8b86efc7;    
+}
+
+tbody#saturated tr{
+    background-color: #aaa5f5c7;    
+}
+
+tbody#polyunsaturated tr td, tbody#monounsaturated tr td, tbody#saturated tr{
+    cursor:pointer;
+    color:#fff;
+}
+
 @media (min-width: 1200px){
     .modal-dialog {
         max-width: 900px;
