@@ -8,3 +8,10 @@
 .modal-dialog label{
     vertical-align: inherit;
 }
+
+@media (min-width: 1200px){
+    .modal-dialog {
+        max-width: 900px;
+        margin: 30px auto;
+    }
+}
