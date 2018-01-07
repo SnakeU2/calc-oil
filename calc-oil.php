@@ -28,14 +28,19 @@ register_activation_hook( __FILE__, function() use ($wpdb){
 
 /*--------------------Admin section----------------------*/
 
-add_action('admin_enqueue_scripts', function (){
+
+
+add_action('admin_enqueue_scripts', function ($hook){
+    if($hook != "toplevel_page_calc-oils") return;
     //css
     wp_register_style('bootstrap',plugins_url('/bootstrap/css/bootstrap.css',__FILE__));
     wp_enqueue_style('bootstrap');
     wp_enqueue_style( 'co-admin-style', plugins_url('/admin_style.css',__FILE__));
     //js register   
 	wp_deregister_script( 'jquery' );
-	wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');	
+	wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');
+
+    
     wp_register_script( 'popper',plugins_url('/bootstrap/js/popper.min.js',__FILE__),array('jquery'));
     wp_register_script( 'bootstrap', plugins_url('/bootstrap/js/bootstrap.min.js',__FILE__),array('jquery'));
     wp_register_script( 'co_admin-script', plugins_url('/js/co_admin.js',__FILE__),array('jquery'));
@@ -51,6 +56,7 @@ add_action('admin_menu', function (){
         add_menu_page( 'Таблица масел', 'Calc-Oil', 'manage_options', 'calc-oils', 'get_oils_list',"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAQOFAAEDhQGlVDz+AAAAB3RJTUUH4gEDChQt3muYgQAAAg1JREFUSMet1TtolEEQB/Dfd3lhDJhoIeIDQRQCQhKCigpaiSgGrYIKaYJp7FOkFcRHK6SIWGiTyk5ETLQRrAVNo4WgEiNCHkIkp+bGZqNfjot38TIw7M7szvx3/zvMZv4t27ADWU5XpIRlvMPPtRI0VgE4j3t4g09oSP4izmIJuzCnDnmDh2nekrQ9Je2zAXIdr3P2ZnThVy3BjTXsKZXZL9MtGjYSIP+4l7ETjxNQsV6AZRRy9hRm8AObNgLgV9kNzmMLmtCK+XoBlsr4vp+oaURzteBCDQAnyuq8PVEzjTP1lugFBPZVWDuV1vb/b/I2fMG5Mn8TruBmWn+QfOuW23hSgedm3MJzPE1vdHxdmQsFpxGjo65GOJz0UITeCD0RDkTYG2H30JBrzc0WU2VVl4YGW/FhdFQpwrcIC0nnczoXYa6vz2x3t4UsE3hR6wXuHD0qIqrryIjo7xeDg6K1VRGXqiU/2dEhpqerJy+VVtsTEyLLvE3NcE3uv9+4Udvp80Dd3WL7dpHKdmwV5bn53c5OR8bH11dqWcbyMl1dHDvGq1d6i0WT+Jjf14KvExPrO30lHR4WqSGukoOYnZ+vH2BqSqRu257vRe+xNDlZ//f37BlYXOmyWY7LoaYmYwMDtLUR8ZfjSrxX8s3MMD5usVBwsVTySFmfhz3oSX3oT2yF+Vrj5/R/T68E/AZ5P2dgMqLZNQAAAABJRU5ErkJggg==","21.1" );
 });
 
+include(__DIR__ . '/widget.php');
 
 function get_oils_list() { //oils (main) admin page 
     global $wpdb;
@@ -208,9 +214,15 @@ add_action('wp_ajax_update_oil', function() use ($wpdb){
     }
 
     //update co_oils
-    $query = ((int)$oil->id === -1)?"INSERT INTO ":"UPDATE ";
+    $id = ((int)$oil->id === -1)?'':$oil->id;
+    //$query = "INSERT INTO ".$wpdb->prefix."co_oils (id, name, iodine, o_group) VALUES('".implode("','",array($id, $oil->name, $oil->iodine, $oil->o_group))."') ON DUPLICATE KEY UPDATE  name='".$oil->name."', iodine='".$oil->iodine."', o_group='".$oil->o_group."'";
+    $query  = "INSERT INTO {$wpdb->prefix}co_oils (id,name,o_group,iodine) VALUES (%d,%s,%s,%d) ON DUPLICATE KEY UPDATE name = %s, o_group=%s, iodine=%d";
+    $query = $wpdb->prepare($query, $id, $oil->name, $oil->o_group, $oil->iodine, $oil->name, $oil->o_group, $oil->iodine);
 
+    //$wpdb->query($query);
     //update co_oils_acids
+    
+
     echo json_encode(array('msg'=>'OK','oil'=>$oil,'query'=>$query));
     wp_die();
 });
@@ -218,13 +230,11 @@ add_action('wp_ajax_update_oil', function() use ($wpdb){
 /*--------------------------frontend-----------------------*/
 
  /*  
-  * 
   * TODO: save oil
-  * 
-  * TODO: edit acids list
-  * TODO: output
+  * TODO: edit acids list  
   * TODO: shortcode
   * TODO: widget
+  * TODO: enqueue frontend js with calc_oil
   *
   * what I know about git commands:
   * 1. git init - startin git work, create master branch
