@@ -154,7 +154,7 @@ function get_oils_list() { //oils (main) admin page
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary">Cохранить</button>
+                        <button type="button" id="btn-save-oil" class="btn btn-primary">Cохранить</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
                     </div>
                 </div>
@@ -195,6 +195,26 @@ add_action('wp_ajax_get_oils', function() use ($wpdb){ //get oils as json object
     wp_die();
 });
 
+add_action('wp_ajax_update_oil', function() use ($wpdb){
+    check_ajax_referer( 'oc-adm-ajax-nonce', 'nonce');
+    $oil = (gettype($_POST['oil']) === "string")?@json_decode(stripcslashes($_POST['oil'])):null;
+    //catch json err
+    if(is_null($oil)){       
+        $json_err = (json_last_error() !== JSON_ERROR_NONE)?"JSON error: ".json_last_error_msg():"";
+        $retStr = "Something wrong ".$json_err;
+        $oilStr =  $_POST['oil'];
+        echo json_encode(array('msg'=>$retStr,'oil'=>$oilStr));
+        wp_die();
+    }
+
+    //update co_oils
+    $query = ((int)$oil->id === -1)?"INSERT INTO ":"UPDATE ";
+
+    //update co_oils_acids
+    echo json_encode(array('msg'=>'OK','oil'=>$oil,'query'=>$query));
+    wp_die();
+});
+
 /*--------------------------frontend-----------------------*/
 
  /*  
@@ -217,5 +237,8 @@ add_action('wp_ajax_get_oils', function() use ($wpdb){ //get oils as json object
   * 8. git reset (soft) [--hard] <commit ID> - move head to <commit ID> with --hard change files in woring dir. Not safe!
   * 9. git reset HEAD@{<num>} - see in reflog actions and choose one of them.
   * 10.git merge [-ff] <branch> - merge currnt head with <branch> -ff means fastforward, just move cursot to curren commin in branch
-  * 
+  * 11.git push [-f] <repo name> <remote branch> -  write to remote repository. -f - force
+  * 12.git remote add <name> <remote url> - add repo. default name - origin
+  * 13.git pull <repo name> <remote branch> - load all from remote repo.
+  * 14. git show-branch -a - view all branches
   * /
