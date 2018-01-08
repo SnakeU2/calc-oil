@@ -38,8 +38,25 @@ class CO_Widget extends WP_Widget {
                     <button class="btn btn-sm align-middle btn-outline-primary" type="button" id="co_open_choise">Добавить</button>
                   </form>
                 </nav>
-                <div id="calc-tab"></div>
-                <div id="calc-info"></div>
+                <div id="calc-tab">
+                    <table class="table" id="co_calc_oil_table">
+                        <thead>
+                            <tr>                               
+                                <th>Наименование</th>
+                                <th>% в смеси</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div id="calc-info">
+                    <div id="info-count"><h6 class="p-1">Кол-во масел в смеси</h6><div class="status pink p-1">0% - Нужно добавить масел!</div></div>
+                    <div id="info-acid-potencial"><h6 class="p-1">Потенциал окисления</h6><div class="status p-1 success">Достаточно стабильная смесь</div></div>
+                    <div id="info-liquid"><h6 class="p-1">Растекаемость масел</h6><div class="status p-1"></div></div>
+                    <div id="info-olein-linol"><h6 class="p-1">Олеиновая/линолевая</h6><div class="status p-1"></div></div>
+                    <div id="info-linol-lionlen"><h6 class="p-1">Линолевая/линоленовая</h6><div class="status p-1"></div></div>
+                    <div id="info-palmitine"><h6 class="p-1">Пальмитиновая</h6><div class="status p-1"></div></div>
+                </div>
             </div>
         </div>
         <!--- modal form-->
@@ -62,7 +79,7 @@ class CO_Widget extends WP_Widget {
                             </div>
                            
                         </div>
-                        <div class="form-group row align-items-center">
+                        <div class="container-fluide align-items-center">
                             <table class="table table-striped" id="co_choise_oil_table">
                                 <thead>
                                     <tr>
@@ -75,10 +92,9 @@ class CO_Widget extends WP_Widget {
                                 </tbody>                                
                             </table>
                         </div>
-                    </div>
-                    <div class="d-flex flex-wrap" id="choise-acids"></div>
-                    <div class="modal-footer">
-                        
+                        <div class="d-flex flex-wrap" id="choise-acids"></div>
+                    </div>                    
+                    <div class="modal-footer">                        
                         <button type="button" id="btn-choose-oil" class="btn btn-primary">Добавить</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
                     </div>
