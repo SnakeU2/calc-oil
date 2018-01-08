@@ -1,20 +1,19 @@
 <?php
 class CO_Widget extends WP_Widget {
-
-	// Регистрация виджета используя основной класс
+	
 	function __construct() {
-		// вызов конструктора выглядит так:
+		
 		// __construct( $id_base, $name, $widget_options = array(), $control_options = array() )
 		parent::__construct(
-			'co_widget', // ID виджета, если не указать (оставить ''), то ID будет равен названию класса в нижнем регистре: foo_widget
+			'co_widget', 
 			'Калькулятор',
-			array( 'description' => 'Описание виджета', /*'classname' => 'my_widget',*/ )
+			array( 'description' => 'Калькулятор масел', /*'classname' => 'my_widget',*/ )
 		);
 
 		// скрипты/стили виджета, только если он активен
 		if ( is_active_widget( false, false, $this->id_base ) || is_customize_preview() ) {
-			add_action('wp_enqueue_scripts', array( $this, 'add_my_widget_scripts' ));
-			add_action('wp_head', array( $this, 'add_my_widget_style' ) );
+			add_action('wp_enqueue_scripts', array( $this, 'add_scripts' ));
+			add_action('wp_head', array( $this, 'add_style' ) );
 		}
 	}
 
@@ -30,12 +29,64 @@ class CO_Widget extends WP_Widget {
 		echo $args['before_widget'];
 		if ( ! empty( $title ) ) {
 			echo $args['before_title'] . $title . $args['after_title'];
-		}
+		} ?>
 
-        
-
-        
-		echo $args['after_widget'];
+        <div class="container-fluide">
+            <div class="flex-column">
+                <nav class="navbar navbar-light bg-light">
+                  <form class="form-inline">                    
+                    <button class="btn btn-sm align-middle btn-outline-primary" type="button" id="co_open_choise">Добавить</button>
+                  </form>
+                </nav>
+                <div id="calc-tab"></div>
+                <div id="calc-info"></div>
+            </div>
+        </div>
+        <!--- modal form-->
+         <div class="modal" id="co_oils_modal" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Подбор масел</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        
+                        <div class="form-group row align-items-center">
+                            <div class="col-auto">
+                                <label class="mr-sm-2" for="co_oil_group">Группа</label>
+                                <select class="form-control custom-select mr-sm-2" id="co_oil_group">                                    
+                                </select>
+                            </div>
+                           
+                        </div>
+                        <div class="form-group row align-items-center">
+                            <table class="table table-striped" id="co_choise_oil_table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Наименование</th>
+                                        <th>Йодное число</th>                                        
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>                                
+                            </table>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap" id="choise-acids"></div>
+                    <div class="modal-footer">
+                        
+                        <button type="button" id="btn-choose-oil" class="btn btn-primary">Добавить</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    </div>
+                </div>
+            </div>
+        </div>   
+                
+	<?php echo $args['after_widget'];
 	}
 
 	/**
@@ -72,26 +123,38 @@ class CO_Widget extends WP_Widget {
 	}
 
 	// скрипт виджета
-	function add_my_widget_scripts() {
+	function add_scripts() {
 		// фильтр чтобы можно было отключить скрипты
-		if( ! apply_filters( 'show_my_widget_script', true, $this->id_base ) )
+		if( ! apply_filters( 'show_calc_oil_script', true, $this->id_base ) )
 			return;
 
-		$theme_url = get_stylesheet_directory_uri();
+         //js register   
+        wp_deregister_script( 'jquery' );
+        wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');
 
-		wp_enqueue_script('my_widget_script', $theme_url .'/my_widget_script.js' );
+        
+        wp_register_script( 'popper',plugins_url('/bootstrap/js/popper.min.js',__FILE__),array('jquery'));
+        wp_register_script( 'bootstrap', plugins_url('/bootstrap/js/bootstrap.min.js',__FILE__),array('jquery'));
+        
+        //js enqueue
+        wp_enqueue_script( 'jquery' );
+        wp_enqueue_script( 'popper' );
+        wp_enqueue_script( 'bootstrap' );
+        
+		wp_enqueue_script('co_frontend_script', plugins_url('/js/co_frontend.js',__FILE__),array('jquery','bootstrap'));
+        wp_localize_script( 'co_frontend_script', 'co_ajax', 
+            array(
+                'url' => admin_url('admin-ajax.php')
+            )
+        );  
 	}
 
 	// стили виджета
-	function add_my_widget_style() {
+	function add_style() {
 		// фильтр чтобы можно было отключить стили
-		if( ! apply_filters( 'show_my_widget_style', true, $this->id_base ) )
+		if( ! apply_filters( 'show_calc_oil_style', true, $this->id_base ) )
 			return;
-		?>
-		<style type="text/css">
-			.my_widget a{ display:inline; }
-		</style>
-		<?php
+		wp_enqueue_style( 'co-admin-style', plugins_url('/css/widget.css',__FILE__));
 	}
 
 } 

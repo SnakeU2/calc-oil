@@ -35,7 +35,7 @@ add_action('admin_enqueue_scripts', function ($hook){
     //css
     wp_register_style('bootstrap',plugins_url('/bootstrap/css/bootstrap.css',__FILE__));
     wp_enqueue_style('bootstrap');
-    wp_enqueue_style( 'co-admin-style', plugins_url('/admin_style.css',__FILE__));
+    wp_enqueue_style( 'co-admin-style', plugins_url('/css/admin.css',__FILE__));
     //js register   
 	wp_deregister_script( 'jquery' );
 	wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');
@@ -172,7 +172,11 @@ function get_oils_list() { //oils (main) admin page
 <?php
 } //end get_oils_list
 
-add_action('wp_ajax_get_oils', function() use ($wpdb){ //get oils as json object
+add_action('wp_ajax_get_oils', 'co_get_oils');
+add_action('wp_ajax_nopriv_get_oils', 'co_get_oils');
+
+function co_get_oils(){ //get oils as json object
+    global $wpdb; 
     $oils = $wpdb->get_results("SELECT * FROM `".$wpdb->prefix."co_oils`");
     foreach ($oils as &$oil){        
         $oil->acids = $wpdb->get_results("SELECT id_acid as id, ROUND(percent,2) as percent FROM `".$wpdb->prefix."co_oils_acids` WHERE id_oil ='".$oil->id."'");
@@ -199,7 +203,7 @@ add_action('wp_ajax_get_oils', function() use ($wpdb){ //get oils as json object
 
     echo json_encode(array('nonce'=>wp_create_nonce('oc-adm-ajax-nonce'),'oils'=>$oils,'groups'=>$groups, 'types'=>$types, 'acids'=>$acids));
     wp_die();
-});
+}
 
 add_action('wp_ajax_update_oil', function() use ($wpdb){
     check_ajax_referer( 'oc-adm-ajax-nonce', 'nonce');
