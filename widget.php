@@ -51,8 +51,8 @@ class CO_Widget extends WP_Widget {
                 </div>
                 <div id="calc-info">
                     <div id="info-count"><h6 class="p-1">Кол-во масел в смеси</h6><div class="status pink p-1">0% - Нужно добавить масел!</div></div>
-                    <div id="info-acid-potencial"><h6 class="p-1">Потенциал окисления</h6><div class="status p-1 success">Достаточно стабильная смесь</div></div>
-                    <div id="info-liquid"><h6 class="p-1">Растекаемость масел</h6><div class="status p-1"></div></div>
+                    <div id="info-acid-potencial"><h6 class="p-1" ><span class="t-blue" tooltip=""><i class="fa fa-info-circle"></i></span>&nbsp;Потенциал окисления</h6><div class="status p-1 success">Достаточно стабильная смесь</div></div>
+                    <div id="info-liquid"><h6 class="p-1"><span class="t-blue" tooltip=""><i class="fa fa-info-circle"></i></span>&nbsp;Растекаемость масел</h6><div class="status p-1"></div></div>
                     <div id="info-olein-linol"><h6 class="p-1">Олеиновая/линолевая</h6><div class="status p-1"></div></div>
                     <div id="info-linol-lionlen"><h6 class="p-1">Линолевая/линоленовая</h6><div class="status p-1"></div></div>
                     <div id="info-palmitine"><h6 class="p-1">Пальмитиновая</h6><div class="status p-1"></div></div>
@@ -147,15 +147,16 @@ class CO_Widget extends WP_Widget {
          //js register   
         wp_deregister_script( 'jquery' );
         wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');
-
         
-        wp_register_script( 'popper',plugins_url('/bootstrap/js/popper.min.js',__FILE__),array('jquery'));
+        wp_register_script( 'popper',plugins_url('/bootstrap/js/popper.min.js',__FILE__),array('jquery'));        
         wp_register_script( 'bootstrap', plugins_url('/bootstrap/js/bootstrap.min.js',__FILE__),array('jquery'));
+        wp_register_script( 'bootstrap_tooltip', plugins_url('/bootstrap/js/bootstrap-tooltip.js',__FILE__),array('bootstrap'));
         
         //js enqueue
         wp_enqueue_script( 'jquery' );
         wp_enqueue_script( 'popper' );
         wp_enqueue_script( 'bootstrap' );
+        wp_enqueue_script( 'bootstrap-tooltip' );
         
 		wp_enqueue_script('co_frontend_script', plugins_url('/js/co_frontend.js',__FILE__),array('jquery','bootstrap'));
         wp_localize_script( 'co_frontend_script', 'co_ajax', 

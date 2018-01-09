@@ -1,3 +1,5 @@
+'use strict';
+
 var calc_oils={
     'list':[],
     'nonce':'',
@@ -47,57 +49,83 @@ var calc_oils={
         return [];        
     }        
 }
+var choosed_oils = {};
 
-var choosed_oils = {
-    list:[],
-    'recalc':function(){
-
-    },
-    'rebuild':function(){        
-        $.each(calc_oils.groups,function(ind,val){ $('#co-caltab-gr-'+val).empty();});
-        if(this.list.length){
-            $.each(this.list,function(id,oil){
-                $('#co-caltab-gr-'+oil.o_group).append($('<tr>').attr('data-oil',oil.id)
-                    .append($('<td>').text(oil.name))
-                    .append($('<td>')
-                        .append($('<input>').attr({'class':'form-control form-control-sm','type':'text'}).val(oil.count))
-                            .on('change',function(){
-                                
-                            })
-                    )
-                    .append($('<td>').on('click',function(){
-                            choosed_oils.remove($(this).parent().data('oil'));
-                        })
-                        .append($('<div>').attr({'class':'co-calc-oil-tab-remove'}).text("X"))
-                    )
-                );
-
-            });
-        }
-    },
-    'add':function(oil){
-        if(typeof(oil) !="object") oil = calc_oils.get_oil(oil);
-        if(this.list.length){
-            var exists = $.grep(this.list, function(lOil){ return lOil.id == oil.id });
-            if(exists.length) return false;
-        }
-        if(!oil.count) oil.count = 0;
-        this.list.push(oil);        
-        this.rebuild();
-    },
-    'remove':function(oil){
-        if(typeof(oil) == "object") oil = oil.id;
-        if(this.list.length){
-            var exists = -1;
-            $.each(this.list,function(ind,lOil){if(lOil.id == oil) exists = ind});
-            if(exists != -1) this.list.splice(exists,1);            
-            this.rebuild();
-        }
-    }    
-}
 
 //jQuery.noConflict();
-jQuery('document').ready(function($){    
+jQuery('document').ready(function($){
+    
+    choosed_oils = {
+        list:[],
+        calc:{
+            'percents':0, //percent oils
+            'iodine_stable':0, //iodine stability
+            'iodine_count':0
+        },
+        'recalc':function(){
+            //clear calc
+            $.each(this.calc,function(ind,el){
+                choosed_oils.calc[ind]=0;
+            });
+            $.each(this.list,function(ind,oil){
+                //calc percent oils
+                choosed_oils.calc.percents+=oil.count;
+                //calc iodine_stable
+                choosed_oils.calc.iodine_stable += (parseInt(oil.iodine) > 0)? parseFloat( (parseInt(oil.iodine) / 100 * oil.count).toFixed(2)):0;
+                choosed_oils.calc.iodine_count+=(parseInt(oil.iodine) > 0)?1:0; 
+            })
+            $(this).trigger('oils:recalc',this);
+        },
+        'rebuild':function(){        
+            $.each(calc_oils.groups,function(ind,val){ $('#co-caltab-gr-'+val).empty();});
+            if(this.list.length){
+                $.each(this.list,function(id,oil){
+                    $('#co-caltab-gr-'+oil.o_group).append($('<tr>').attr('data-oil',oil.id)
+                        .append($('<td>').text(oil.name))
+                        .append($('<td>')
+                            .append($('<input>').attr({'class':'form-control form-control-sm','type':'number'}).val(oil.count)
+                                .on('change',function(){
+                                    calc_oils.get_oil($(this).closest('tr').data('oil')).count=parseInt($(this).val());
+                                    choosed_oils.recalc();                               
+                                })
+                            )
+                        )
+                        .append($('<td>').on('click',function(){
+                                choosed_oils.remove($(this).parent().data('oil'));                            
+                            })
+                            .append($('<div>').attr({'class':'co-calc-oil-tab-remove'}).text("X"))
+                        )
+                    );
+
+                });
+            }
+            this.recalc();
+        },
+        'add':function(oil){
+            if(typeof(oil) !="object") oil = calc_oils.get_oil(oil);
+            if(this.list.length){
+                var exists = $.grep(this.list, function(lOil){ return lOil.id == oil.id });
+                if(exists.length) return false;
+            }
+            if(!oil.count) oil.count = 0;
+            this.list.push(oil);        
+            this.rebuild();
+        },
+        'remove':function(oil){
+            if(typeof(oil) == "object") oil = oil.id;
+            if(this.list.length){
+                var exists = -1;
+                $.each(this.list,function(ind,lOil){if(lOil.id == oil) exists = ind});            
+                if(exists != -1) {
+                    this.list[exists].count=0;
+                    this.list.splice(exists,1);
+                }
+                this.rebuild();            
+            }
+        }    
+    }
+
+       
     //ajax query for oils object, prepare modal
     
     $.post(co_ajax.url,{'action':'get_oils'},function(result){
@@ -147,6 +175,38 @@ jQuery('document').ready(function($){
             choosed_oils.add($('#co_choise_oil_table tbody tr.choise-selected').data('oil'));
         }
     });
-    
+
+    $(choosed_oils).on('oils:recalc',function(){
+        var calc = choosed_oils.calc;
+        //update info
+        //percents
+        $('#info-count div.status').removeClass('pink success orange');
+        if(calc.percents < 100){
+            $('#info-count div.status').addClass('pink').text(""+calc.percents+"% - Нужно добавить масел!");                                    
+        }
+        else if (calc.percents == 100){
+            $('#info-count div.status').addClass('success').text(""+calc.percents+"% - Отлично!");
+        }
+        else {
+            $('#info-count div.status').addClass('orange').text(""+calc.percents+"% - Нужно удалить масла");
+        }
+        //iodine_stable
+        $('#info-acid-potencial div.status').removeClass('pink success orange');
+        if(calc.iodine_stable < 120){
+            $('#info-acid-potencial div.status').addClass('success').text(""+calc.iodine_stable+" - Достаточно стабильная смесь");
+        }
+        else if(calc.iodine_stable > 120 && calc.iodine_stable < 150){
+            $('#info-acid-potencial div.status').addClass('orange').text(""+calc.iodine_stable+" - Средний окислительный потенциал");
+        }
+        else{
+            $('#info-acid-potencial div.status').addClass('pink').text(""+calc.iodine_stable+" - Крайне высокий окислительный потенциал");
+        }
+        var tooltip = (choosed_oils.list.length == calc.iodine_count)?"Расчет верный":"Расчет приблизительный,"+String.fromCharCode(0xA)+"не для всех масел известно йодное число.";
+        var tooltipClass = (choosed_oils.list.length == calc.iodine_count)?"t-blue":"t-pink";
+        $('#info-acid-potencial h6 span').attr('tooltip',tooltip);
+        $('#info-acid-potencial h6 span').removeClass('t-pink t-success t-orange t-red t-blue');
+        $('#info-acid-potencial h6 span').addClass(tooltipClass);
+        
+    });
     
 });
