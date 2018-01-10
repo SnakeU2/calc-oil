@@ -60,20 +60,29 @@ jQuery('document').ready(function($){
         calc:{
             'percents':0, //percent oils
             'iodine_stable':0, //iodine stability
-            'iodine_count':0
+            'iodine_count':0,
+            'iodine_liquid':{'nodry':0,'semidry':0,'dry':0}
         },
         'recalc':function(){
             //clear calc
             $.each(this.calc,function(ind,el){
-                choosed_oils.calc[ind]=0;
+                if(typeof(el)=='object') $.each(el,function(elInd,elEl){el[elInd] = 0});
+                else choosed_oils.calc[ind]=0;
             });
             $.each(this.list,function(ind,oil){
                 //calc percent oils
                 choosed_oils.calc.percents+=oil.count;
                 //calc iodine_stable
-                choosed_oils.calc.iodine_stable += (parseInt(oil.iodine) > 0)? parseFloat( (parseInt(oil.iodine) / 100 * oil.count).toFixed(2)):0;
-                choosed_oils.calc.iodine_count+=(parseInt(oil.iodine) > 0)?1:0; 
-            })
+                var iodine = parseInt(oil.iodine); 
+                choosed_oils.calc.iodine_stable += (iodine > 0)? parseFloat( (iodine / 100 * oil.count).toFixed(2)):0;
+                choosed_oils.calc.iodine_count+=(iodine > 0)?1:0;
+                //calc iodine_liquid
+                if(iodine <= 100)  choosed_oils.calc.iodine_liquid.nodry += oil.count;
+                else if( iodine > 100 && iodine <= 140) choosed_oils.calc.iodine_liquid.semidry += oil.count;
+                else if( iodine > 140 ) choosed_oils.calc.iodine_liquid.dry += oil.count;
+                //calc oils
+                                
+            });
             $(this).trigger('oils:recalc',this);
         },
         'rebuild':function(){        
@@ -170,42 +179,66 @@ jQuery('document').ready(function($){
         }
     });
 
-    $('#btn-choose-oil').on('click',function(){
-        if($('#co_choise_oil_table tbody tr.choise-selected').length){
-            choosed_oils.add($('#co_choise_oil_table tbody tr.choise-selected').data('oil'));
-        }
+    $('.btn-choose-oil').each(function(){
+        $(this).on('click',function(){
+            if($('#co_choise_oil_table tbody tr.choise-selected').length){
+                choosed_oils.add($('#co_choise_oil_table tbody tr.choise-selected').data('oil'));
+            }
+        });
     });
 
     $(choosed_oils).on('oils:recalc',function(){
         var calc = choosed_oils.calc;
         //update info
-        //percents
-        $('#info-count div.status').removeClass('pink success orange');
+        var text = "";
+        var addClass = "";
+        var tooltip="";
+        var tooltipClass = "d-none";
+
+        //percents        
         if(calc.percents < 100){
-            $('#info-count div.status').addClass('pink').text(""+calc.percents+"% - Нужно добавить масел!");                                    
+            addClass = 'pink';
+            text = ""+calc.percents+"% - Нужно добавить масел!";                                                
         }
         else if (calc.percents == 100){
-            $('#info-count div.status').addClass('success').text(""+calc.percents+"% - Отлично!");
+            addClass = 'success';
+            text = ""+calc.percents+"% - Отлично!";
         }
         else {
-            $('#info-count div.status').addClass('orange').text(""+calc.percents+"% - Нужно удалить масла");
+            addClass = 'orange';
+            text = ""+calc.percents+"% - Нужно удалить масла";            
         }
+        $('#info-count div.status').removeClass('pink success orange').text("");
+        $('#info-count div.status').addClass(addClass).text(text);
         //iodine_stable
+        addClass = "";
+        text = "";
         $('#info-acid-potencial div.status').removeClass('pink success orange');
-        if(calc.iodine_stable < 120){
-            $('#info-acid-potencial div.status').addClass('success').text(""+calc.iodine_stable+" - Достаточно стабильная смесь");
+        if(calc.iodine_stable > 0 && calc.iodine_stable < 120){
+            addClass = 'success';
+            text = ""+calc.iodine_stable.toFixed(2)+" - Достаточно стабильная смесь";
         }
         else if(calc.iodine_stable > 120 && calc.iodine_stable < 150){
-            $('#info-acid-potencial div.status').addClass('orange').text(""+calc.iodine_stable+" - Средний окислительный потенциал");
+            addClass = 'orange';
+            text = ""+calc.iodine_stable.toFixed(2)+" - Средний окислительный потенциал";            
         }
-        else{
-            $('#info-acid-potencial div.status').addClass('pink').text(""+calc.iodine_stable+" - Крайне высокий окислительный потенциал");
+        else if(calc.iodine_stable > 0){
+            addClass = 'pink';
+            text = ""+calc.iodine_stable.toFixed(2)+" - Крайне высокий окислительный потенциал";            
         }
-        var tooltip = (choosed_oils.list.length == calc.iodine_count)?"Расчет верный":"Расчет приблизительный,"+String.fromCharCode(0xA)+"не для всех масел известно йодное число.";
-        var tooltipClass = (choosed_oils.list.length == calc.iodine_count)?"t-blue":"t-pink";
+        $('#info-acid-potencial div.status').addClass(addClass).text(text);
+        
+        if(choosed_oils.list.length){
+            tooltip = (choosed_oils.list.length == calc.iodine_count)?"Расчет верный."+String.fromCharCode(0xA)+"Йодное число указано для всех масел":"Расчет приблизительный,"+String.fromCharCode(0xA)+"не для всех масел известно йодное число.";
+            tooltipClass = (choosed_oils.list.length == calc.iodine_count)?"t-blue":"t-pink";
+        }
         $('#info-acid-potencial h6 span').attr('tooltip',tooltip);
-        $('#info-acid-potencial h6 span').removeClass('t-pink t-success t-orange t-red t-blue');
-        $('#info-acid-potencial h6 span').addClass(tooltipClass);
+        $('#info-acid-potencial h6 span').removeClass('t-pink t-success t-orange t-red t-blue d-none').addClass(tooltipClass);
+        //iodine_liquid
+        addClass = (calc.iodine_liquid.nodry == 50 && calc.iodine_liquid.semidry == 35 && calc.iodine_liquid.dry == 15)?'success':'pink'; 
+        tooltipClass = (calc.iodine_liquid.nodry == 50 && calc.iodine_liquid.semidry == 35 && calc.iodine_liquid.dry == 15)?'t-blue':'t-pink'; 
+        $('#info-liquid div.status').removeClass('pink success orange').addClass(addClass).html('Невысыхающие: '+calc.iodine_liquid.nodry+'<br><br>Полувысыхающие: '+calc.iodine_liquid.semidry+'<br><br>Высыхающие: '+calc.iodine_liquid.dry);
+        $('#info-liquid h6 span').removeClass('t-pink t-success t-orange t-red t-blue d-none').addClass(tooltipClass);
         
     });
     

@@ -12,6 +12,17 @@ var calc_oils={
             }           
         }
         return null;
+    },
+    'update_list':function(oil,operation){
+        switch(operation){
+            case 'update': $.map(calc_oils.list,function(lOil,ind){if(lOil.id == oil.id) calc_oils.list[ind] = oil;});
+                break;
+            case 'insert': calc_oils.list.push(oil);
+                break;
+            case 'delete': calc_oils.list.splice(oil,1); //TODO: its WRONG! only stub!
+            
+        }
+        
     }    
 }
 
@@ -59,7 +70,7 @@ jQuery('document').ready(function($){
                 $("#co_oil_name").data('oil_id',oil.id);
                 $("#co_oil_iodine").val(oil.iodine);
                 $.each(oil.acids,function(ind,o_acid){
-                    $('#co_acids_table input#acid-id-'+o_acid.id).val(parseInt(o_acid.percent*100));
+                    $('#co_acids_table input#acid-id-'+o_acid.id).val(parseFloat(o_acid.percent*100).toFixed(2));
                 })
                 $('#co_oils_modal').modal('toggle');
             });            
@@ -101,13 +112,13 @@ jQuery('document').ready(function($){
                 'name':$("#co_oil_name").val(),
                 'o_group':$('#co_oil_group').val(),
                 'iodine': $("#co_oil_iodine").val(),
-                'acids':$.map($('#co_acids_table input'),function(inp){if(parseInt($(inp).val())) return {'id':$(inp).data('acid_id'),'percent':(parseInt($(inp).val())/100).toFixed(2)}})
+                'acids':$.map($('#co_acids_table input'),function(inp){if(parseFloat($(inp).val())) return {'id':$(inp).data('acid_id'),'percent':(parseFloat($(inp).val())/100).toFixed(4)}})
                 }),
             'nonce': calc_oils.nonce
         }
         //send
         $.post(ajaxurl,data,function(result){
-            console.log(result);
+            
         },'json').fail(function(xhr,text){
             console.log(text);
         });

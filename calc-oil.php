@@ -179,7 +179,7 @@ function co_get_oils(){ //get oils as json object
     global $wpdb; 
     $oils = $wpdb->get_results("SELECT * FROM `".$wpdb->prefix."co_oils`");
     foreach ($oils as &$oil){        
-        $oil->acids = $wpdb->get_results("SELECT id_acid as id, ROUND(percent,2) as percent FROM `".$wpdb->prefix."co_oils_acids` WHERE id_oil ='".$oil->id."'");
+        $oil->acids = $wpdb->get_results("SELECT id_acid as id, ROUND(percent,4) as percent FROM `".$wpdb->prefix."co_oils_acids` WHERE id_oil ='".$oil->id."'");
     }
 
     $query = "SELECT * FROM `".$wpdb->prefix."co_acids`";
@@ -218,14 +218,38 @@ add_action('wp_ajax_update_oil', function() use ($wpdb){
     }
 
     //update co_oils
-    $id = ((int)$oil->id === -1)?'':$oil->id;
-    //$query = "INSERT INTO ".$wpdb->prefix."co_oils (id, name, iodine, o_group) VALUES('".implode("','",array($id, $oil->name, $oil->iodine, $oil->o_group))."') ON DUPLICATE KEY UPDATE  name='".$oil->name."', iodine='".$oil->iodine."', o_group='".$oil->o_group."'";
-    $query  = "INSERT INTO {$wpdb->prefix}co_oils (id,name,o_group,iodine) VALUES (%d,%s,%s,%d) ON DUPLICATE KEY UPDATE name = %s, o_group=%s, iodine=%d";
-    $query = $wpdb->prepare($query, $id, $oil->name, $oil->o_group, $oil->iodine, $oil->name, $oil->o_group, $oil->iodine);
+    if ((int)$oil->id === -1){
+        $wpdb->insert("{$wpdb->prefix}co_oils",array("name"=>$oil->name, "o_group"=>$oil->o_group, "iodine"=>$oil->iodine),array("%s","%s","%d"));
+        $oil->id = $wpdb->insert_id;
+    }
+    else{
+        $wpdb->update("{$wpdb->prefix}co_oils",array("name"=>$oil->name, "o_group"=>$oil->o_group, "iodine"=>$oil->iodine),array('id'=>$oil->id),array("%s","%s","%d"),array("%d"));
+    }
+    
+    //$query  = "INSERT INTO {$wpdb->prefix}co_oils (id,name,o_group,iodine) VALUES (%d,%s,%s,%d) ON DUPLICATE KEY UPDATE name = %s, o_group=%s, iodine=%d";
+    //$query = $wpdb->prepare($query, $id, $oil->name, $oil->o_group, $oil->iodine, $oil->name, $oil->o_group, $oil->iodine);
 
     //$wpdb->query($query);
-    //update co_oils_acids
     
+    //update co_oils_acids
+    $acid_ids=array();
+    if(is_array($oil->acids) && count($oil->acids)){
+        //update
+        
+        foreach($oil->acids as $acid){
+            $query = "INSERT INTO {$wpdb->prefix}co_oils_acids (id_oil,id_acid, percent) VALUES (%d, %d, %f) ON DUPLICATE KEY UPDATE percent=%f";
+            $query = $wpdb->prepare($query,$oil->id,$acid->id,$acid->percent,$acid->percent);
+            $wpdb->query($query);
+            $acid_ids[]=$acid->id;
+        }        
+        
+
+    }
+    //delete acids
+    $query = "DELETE FROM {$wpdb->prefix}co_oils_acids WHERE id_oil=%d";
+    if(count($acid_ids)) $query.=" AND id_acid NOT IN (".implode(',',$acid_ids).")";
+    $query = $wpdb->prepare($query,$oil->id);
+    $wpdb->query($query);
 
     echo json_encode(array('msg'=>'OK','oil'=>$oil,'query'=>$query));
     wp_die();
@@ -234,25 +258,26 @@ add_action('wp_ajax_update_oil', function() use ($wpdb){
 /*--------------------------frontend-----------------------*/
 
  /*  
-  * TODO: save oil
+  * TODO: echo msg on success update || insert
+  * TODO: on success change calc list
+  * TODO: delete oil
   * TODO: edit acids list  
   * TODO: shortcode
-  * TODO: widget
-  * TODO: enqueue frontend js with calc_oil
+  * TODO: widget  
   *
   * what I know about git commands:
-  * 1. git init - startin git work, create master branch
-  * 2. git add <file1>..<fileN> - add files in current dir to local git repo. Use mask.
-  * 3. git status - show not committed|changed|not addedd files
-  * 4. git branch (-a) - show all local branches. -a - all branches w. remote
-  * 5. git commit -am "comment" - fix changes in branch -m comment -a - add|remove|change file structure in branch
-  * 6. git checkout <branch> - switch to branch,q replace all files from current branch commit. Warn! may be lost all latest modifs in old branch? if not commit it
-  * 7. git reflog - all actions !Important to see wich branch|commit now worked
-  * 8. git reset (soft) [--hard] <commit ID> - move head to <commit ID> with --hard change files in woring dir. Not safe!
-  * 9. git reset HEAD@{<num>} - see in reflog actions and choose one of them.
-  * 10.git merge [-ff] <branch> - merge currnt head with <branch> -ff means fastforward, just move cursot to curren commin in branch
-  * 11.git push [-f] <repo name> <remote branch> -  write to remote repository. -f - force
-  * 12.git remote add <name> <remote url> - add repo. default name - origin
-  * 13.git pull <repo name> <remote branch> - load all from remote repo.
-  * 14. git show-branch -a - view all branches
+1. git init - startin git work, create master branch
+2. git add <file1>..<fileN> - add files in current dir to local git repo. Use mask.
+3. git status - show not committed|changed|not addedd files
+4. git branch (-a) - show all local branches. -a - all branches w. remote
+5. git commit -am "comment" - fix changes in branch -m comment -a - add|remove|change file structure in branch
+6. git checkout <branch> - switch to branch,q replace all files from current branch commit. Warn! may be lost all latest modifs in old branch? if not commit it
+7. git reflog - all actions !Important to see wich branch|commit now worked
+8. git reset (soft) [--hard] <commit ID> - move head to <commit ID> with --hard change files in woring dir. Not safe!
+9. git reset HEAD@{<num>} - see in reflog actions and choose one of them.
+10.git merge [-ff] <branch> - merge currnt head with <branch> -ff means fastforward, just move cursot to curren commin in branch
+11.git push [-f] <repo name> <remote branch> -  write to remote repository. -f - force
+12.git remote add <name> <remote url> - add repo. default name - origin
+13.git pull <repo name> <remote branch> - load all from remote repo.
+14. git show-branch -a - view all branches
   * /

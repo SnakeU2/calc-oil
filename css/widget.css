@@ -45,7 +45,7 @@
 #co_calc_oil_table td{
     padding: .25rem;
 }
-
+/*
 #co_calc_oil_table tbody:nth-child(even) tr {
     background-color: #d0e8d6;
 }
@@ -53,7 +53,7 @@
 #co_calc_oil_table tbody:nth-child(odd) tr {
     background-color: #f5f567;
 }
-
+*/
 [id^=info-]{
     background-color: #f8f9fa;
     margin:0.2rem 0;
@@ -63,7 +63,7 @@
 [id^=info-] h6{
     margin-bottom:0;
     line-height: 0.8;
-    font-size: 1.3rem;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor:pointer;
     position:relative;
@@ -76,17 +76,8 @@
 h6 span {    
     display:inline-block;
     position:relative;
+    font-size:1.3rem;
 }
-/*
-#info-acid-potencial h6:after, #info-liquid h6:after, #info-olein-linol h6:after, #info-linol-lionlen h6:after, #info-palmitine h6:after {
-    content: " \f05a";
-    text-align: right;
-    font-family: FontAwesome;
-    color: blue;
-    font-size: 0.9rem;
-}
-*/
-
 
 .pink{
     background: pink;
@@ -115,44 +106,6 @@ h6 span {
 .t-blue{
     color: blue;
 }
-/*---
-
-[tooltip]:hover::before {
-    content: "";
-    position: absolute;
-    
-    left:80%;
-   
-    border-width: 6px 15px 0 15px;
-    border-style: solid;
-    border-color: rgba(0,0,0,0.7) transparent transparent     transparent;
-    z-index: 100;
-
-    top:100%;
-    margin-top:8px;
-    transform: translateX(-50%) translatey(-100%) rotate(-180deg);
-}*/
-/*
-[tooltip]:hover::after {
-    content: attr(tooltip);    
-    position: absolute;
-    left:180%;
-    background: #fff;    
-    color: #000;
-    padding:0.8rem 0.4rem;
-    font-size: 0.9rem;
-    min-width: 80px;
-    border-radius: 5px;
-    pointer-events: none;
-    border:2px solid #000;
-    top:100%;
-    margin-top:8px;
-    transform: translateX(-50%) translateY(0%);
-    z-index:1000;
-    white-space:pre;
-    line-height:1.2rem;
-}
-*/
 
 [tooltip]:hover::after {
     content: attr(tooltip);    
@@ -171,5 +124,13 @@ h6 span {
     white-space:pre;
     line-height:1.2rem;
 }
+
+.widget_co_widget nav.navbar h4{
+    margin-bottom:0;
+    font-size: 1rem;
+    font-weight:600;
+}
+
+media screen and (max-width:)
 
 

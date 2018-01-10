@@ -27,13 +27,14 @@ class CO_Widget extends WP_Widget {
 		$title = apply_filters( 'widget_title', $instance['title'] );
 
 		echo $args['before_widget'];
-		if ( ! empty( $title ) ) {
-			echo $args['before_title'] . $title . $args['after_title'];
-		} ?>
+		?>
 
         <div class="container-fluide">
             <div class="flex-column">
-                <nav class="navbar navbar-light bg-light">
+                <nav class="navbar navbar-light bg-light flex-row justify-content-between align-items-center">
+                <?php  if ( ! empty( $title ) ) {
+                    echo $args['before_title'] . $title . $args['after_title'];
+                } ?>
                   <form class="form-inline">                    
                     <button class="btn btn-sm align-middle btn-outline-primary" type="button" id="co_open_choise">Добавить</button>
                   </form>
@@ -50,12 +51,12 @@ class CO_Widget extends WP_Widget {
                     </table>
                 </div>
                 <div id="calc-info">
-                    <div id="info-count"><h6 class="p-1">Кол-во масел в смеси</h6><div class="status pink p-1">0% - Нужно добавить масел!</div></div>
-                    <div id="info-acid-potencial"><h6 class="p-1" ><span class="t-blue" tooltip=""><i class="fa fa-info-circle"></i></span>&nbsp;Потенциал окисления</h6><div class="status p-1 success">Достаточно стабильная смесь</div></div>
-                    <div id="info-liquid"><h6 class="p-1"><span class="t-blue" tooltip=""><i class="fa fa-info-circle"></i></span>&nbsp;Растекаемость масел</h6><div class="status p-1"></div></div>
-                    <div id="info-olein-linol"><h6 class="p-1">Олеиновая/линолевая</h6><div class="status p-1"></div></div>
-                    <div id="info-linol-lionlen"><h6 class="p-1">Линолевая/линоленовая</h6><div class="status p-1"></div></div>
-                    <div id="info-palmitine"><h6 class="p-1">Пальмитиновая</h6><div class="status p-1"></div></div>
+                    <div id="info-count"><h6 class="p-1"><span class="t-blue d-none" ><i class="fa fa-info-circle"></i></span>&nbsp;Кол-во масел в смеси</h6><div class="status pink p-1">0% - Нужно добавить масел!</div></div>
+                    <div id="info-acid-potencial"><h6 class="p-1" ><span class="t-blue d-none" ><i class="fa fa-info-circle"></i></span>&nbsp;Потенциал окисления</h6><div class="status p-1"></div></div>
+                    <div id="info-liquid"><h6 class="p-1"><span class="t-blue" tooltip="Норма:&#xA;Невысыхающие: 50%&#xA;Полувысыхающие: 35%&#xA;Высыхающие: 15%"><i class="fa fa-info-circle"></i></span>&nbsp;Растекаемость масел</h6><div class="status p-1"></div></div>
+                    <div id="info-olein-linol"><h6 class="p-1"><span class="t-blue d-none" ><i class="fa fa-info-circle"></i></span>&nbsp;Олеиновая/линолевая</h6><div class="status p-1"></div></div>
+                    <div id="info-linol-lionlen"><h6 class="p-1"><span class="t-blue d-none" ><i class="fa fa-info-circle"></i></span>&nbsp;Линолевая/линоленовая</h6><div class="status p-1"></div></div>
+                    <div id="info-palmitine"><h6 class="p-1"><span class="t-blue d-none" ><i class="fa fa-info-circle"></i></span>&nbsp;Пальмитиновая</h6><div class="status p-1"></div></div>
                 </div>
             </div>
         </div>
@@ -71,13 +72,15 @@ class CO_Widget extends WP_Widget {
                     </div>
                     <div class="modal-body">
                         
-                        <div class="form-group row align-items-center">
+                        <div class="form-group row align-items-end justify-content-between">
                             <div class="col-auto">
                                 <label class="mr-sm-2" for="co_oil_group">Группа</label>
                                 <select class="form-control custom-select mr-sm-2" id="co_oil_group">                                    
                                 </select>
                             </div>
-                           
+                            <div class="col-auto">
+                                <button type="button" id="btn-choose-oil" class="btn btn-primary btn-choose-oil">Выбрать</button>
+                            </div>                           
                         </div>
                         <div class="container-fluide align-items-center">
                             <table class="table table-striped" id="co_choise_oil_table">
@@ -85,18 +88,18 @@ class CO_Widget extends WP_Widget {
                                     <tr>
                                         <th>#</th>
                                         <th>Наименование</th>
-                                        <th>Йодное число</th>                                        
+                                        <th>Йодное число</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                </tbody>                                
+                                </tbody>
                             </table>
                         </div>
                         <div class="d-flex flex-wrap" id="choise-acids"></div>
-                    </div>                    
-                    <div class="modal-footer">                        
-                        <button type="button" id="btn-choose-oil" class="btn btn-primary">Добавить</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="btn-choose-oil" class="btn btn-primary btn-choose-oil">Выбрать</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
                     </div>
                 </div>
             </div>
@@ -146,18 +149,14 @@ class CO_Widget extends WP_Widget {
 
          //js register   
         wp_deregister_script( 'jquery' );
-        wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');
-        
+        wp_register_script( 'jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js');        
         wp_register_script( 'popper',plugins_url('/bootstrap/js/popper.min.js',__FILE__),array('jquery'));        
-        wp_register_script( 'bootstrap', plugins_url('/bootstrap/js/bootstrap.min.js',__FILE__),array('jquery'));
-        wp_register_script( 'bootstrap_tooltip', plugins_url('/bootstrap/js/bootstrap-tooltip.js',__FILE__),array('bootstrap'));
+        wp_register_script( 'bootstrap', plugins_url('/bootstrap/js/bootstrap.min.js',__FILE__),array('jquery'));        
         
         //js enqueue
         wp_enqueue_script( 'jquery' );
         wp_enqueue_script( 'popper' );
         wp_enqueue_script( 'bootstrap' );
-        wp_enqueue_script( 'bootstrap-tooltip' );
-        
 		wp_enqueue_script('co_frontend_script', plugins_url('/js/co_frontend.js',__FILE__),array('jquery','bootstrap'));
         wp_localize_script( 'co_frontend_script', 'co_ajax', 
             array(
