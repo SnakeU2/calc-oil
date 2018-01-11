@@ -1,9 +1,9 @@
 var calc_oils={
     'list':[],
     'nonce':'',
-    'get_oil': function(id, callback){
-        if(calc_oils.list.length){
-            var oil = $.grep(calc_oils.list,function(oil,ind){
+    'get_oilByID': function(id, callback){
+        if(this.list.length){
+            var oil = $.grep(this.list,function(oil,ind){
                 return oil.id == id;
             });
             if(oil.length){
@@ -14,15 +14,18 @@ var calc_oils={
         return null;
     },
     'update_list':function(oil,operation){
-        switch(operation){
-            case 'update': $.map(calc_oils.list,function(lOil,ind){if(lOil.id == oil.id) calc_oils.list[ind] = oil;});
-                break;
-            case 'insert': calc_oils.list.push(oil);
-                break;
-            case 'delete': calc_oils.list.splice(oil,1); //TODO: its WRONG! only stub!
-            
+        if(operation == "insert"){
+            calc_oils.list.push(oil);
         }
-        
+        if(operation == "update"){
+            $.each(calc_oils.list,function(ind,oldOil){
+                if(oldOil.id == oil.id) calc_oils.list[ind] = oil;
+            });
+        }
+        if(operation == 'delete'){
+            var oldOil = calc_oils.get_oilByID(oil);
+            if(oldOil !== null) calc_oils.list.splice(oldOil,1);
+        }
     }    
 }
 
@@ -64,10 +67,10 @@ jQuery('document').ready(function($){
     //get oil, modal fill & show
     $('.oil-edit').each(function(){
         $(this).on('click',function(){
-            calc_oils.get_oil($(this).attr('btn-data'), function(oil){
+            calc_oils.get_oilByID($(this).data('oil'), function(oil){
                 $('#co_oil_group').val(oil.o_group);
                 $("#co_oil_name").val(oil.name);
-                $("#co_oil_name").data('oil_id',oil.id);
+                $("#co_oil_name").attr('data-oil',oil.id);
                 $("#co_oil_iodine").val(oil.iodine);
                 $.each(oil.acids,function(ind,o_acid){
                     $('#co_acids_table input#acid-id-'+o_acid.id).val(parseFloat(o_acid.percent*100).toFixed(2));
@@ -76,15 +79,35 @@ jQuery('document').ready(function($){
             });            
         });
     });
+    //delete oil
+    $('.oil-del').each(function(){
+        $(this).on('click',function(){
+            if(confirm('Вы действительно хотите удалить запись:\r\n'+calc_oils.get_oilByID($(this).data('oil')).name+"?")){            
+                $.post(ajaxurl,{'action':'remove_oil',oil:$(this).data('oil'),'nonce': calc_oils.nonce},function(result){                    
+                    var oilName = calc_oils.get_oilByID(result.oil).name;
+                    //update list
+                    calc_oils.update_list(result.oil,'delete');
+                    //update table
+                    $("#oil-row-"+result.oil).remove();
+                    //show message
+                    alert(result.msg+ " "+oilName);
+                },'json').fail(function(xhr,text){
+                    console.log(text);
+                });
+            }
+        });
+    });
+
+    //add oil
     $('#add-oil').on('click',function(){
-        $("#co_oil_name").data('oil_id',-1);      
+        $("#co_oil_name").attr('data-oil',-1);      
         $('#co_oils_modal').modal('toggle');
     })
     //modal clear & save 
     $('#co_oils_modal').on('hidden.bs.modal', function (e) {
         $('#co_oil_group').val('');
         $("#co_oil_name").val('');
-        $("#co_oil_name").removeData('oil_id');
+        $("#co_oil_name").removeAttr('data-oil');
         $("#co_oil_iodine").val(0);
         $.each($('#co_acids_table input'),function(ind,el){
             $(this).val(0);
@@ -104,11 +127,13 @@ jQuery('document').ready(function($){
             alert(errMsg);
             return false;
         }
+        //check oil id
+        if(typeof($('#co_oil_name').data('oil')) === "undefined") return false;
         //prepare data       
         var data = {
             'action':'update_oil',
             'oil': JSON.stringify({
-                'id': $("#co_oil_name").data('oil_id'),
+                'id': $("#co_oil_name").data('oil'),
                 'name':$("#co_oil_name").val(),
                 'o_group':$('#co_oil_group').val(),
                 'iodine': $("#co_oil_iodine").val(),
@@ -116,9 +141,56 @@ jQuery('document').ready(function($){
                 }),
             'nonce': calc_oils.nonce
         }
+        //remove data-oil
+        $("#co_oil_name").removeAttr('data-oil');
+        $("#co_oil_name").removeData('oil');
         //send
         $.post(ajaxurl,data,function(result){
-            
+            //set attribute data
+            $("#co_oil_name").attr('data-oil',result.oil.id);
+            $("#co_oil_name").data('oil',result.oil.id);
+            //update list
+            calc_oils.update_list(result.oil,result.action);
+            //update table
+            if(result.action == "update"){
+               var tds = $("#oil-row-"+result.oil.id+" td");
+               $(tds[1]).text(result.oil.name);
+               $(tds[2]).text(result.oil.o_group);
+               $(tds[3]).text(result.oil.iodine);
+            }
+            if(result.action == 'insert'){
+                $('#tab-oils tbody').append($('<tr>').attr({'id':'oil-row-'+ result.oil.id})
+                    .append($('<td>').attr({'td-data':"id"}).text(result.oil.id))
+                    .append($('<td>').attr({'td-data':"name"}).text(result.oil.name))
+                    .append($('<td>').attr({'td-data':"group"}).text(result.oil.o_group))
+                    .append($('<td>').attr({'td-data':"iodine"}).text(result.oil.iodine))
+                    .append($('<td>' )
+                        .append($('<button>').addClass("btn btn-success oil-edit").attr({'data-oil':result.oil.id}).text('Редактировать').on('click',function(){
+                                calc_oils.get_oilByID($(this).data('oil'), function(oil){
+                                    $('#co_oil_group').val(oil.o_group);
+                                    $("#co_oil_name").val(oil.name);
+                                    $("#co_oil_name").attr('data-oil',oil.id);
+                                    $("#co_oil_iodine").val(oil.iodine);
+                                    $.each(oil.acids,function(ind,o_acid){
+                                        $('#co_acids_table input#acid-id-'+o_acid.id).val(parseFloat(o_acid.percent*100).toFixed(2));
+                                    })
+                                    $('#co_oils_modal').modal('toggle');
+                                });            
+                            }).after('\xa0'))                        
+                        .append($('<button>').addClass("btn btn-danger oil-del").attr({'data-oil':result.oil.id}).text('X').on('click',function(){
+                                if(confirm('Вы действительно хотите удалить запись:\r\n'+calc_oils.get_oilByID($(this).data('oil')).name+"?")){            
+                                    $.post(ajaxurl,{'action':'remove_oil',oil:$(this).data('oil'),'nonce': calc_oils.nonce},function(result){
+                                    
+                                    },'json').fail(function(xhr,text){
+                                        console.log(text);
+                                    });
+                                }
+                            }))
+                    )                    
+                );
+            }
+            //show message
+            alert(result.msg + " " + result.oil.name);
         },'json').fail(function(xhr,text){
             console.log(text);
         });

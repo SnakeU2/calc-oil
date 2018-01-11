@@ -90,7 +90,7 @@ function get_oils_list() { //oils (main) admin page
           </form>
           <button class="btn btn-primary" id="add-oil">Добавить масло</button>
         </nav>
-        <table class="table  table-striped">
+        <table class="table  table-striped" id="tab-oils"> 
             <thead class="thead-dark">
                 <tr>
                     <th>#</th>
@@ -102,12 +102,12 @@ function get_oils_list() { //oils (main) admin page
             </thead>
             <tbody> 
                 <?php foreach ($oils as $oil): ?>
-                <tr id="row_<?php echo $oil->id; ?>">
+                <tr id="oil-row-<?php echo $oil->id; ?>">
                     <td td-data="id"><?php echo $oil->id; ?></td>
                     <td td-data="name"><?php echo $oil->name; ?></td>
                     <td td-data="group"><?php echo $oil->o_group; ?></td>
                     <td td-data="iodine"><?php echo $oil->iodine; ?></td>
-                    <td><button class="btn btn-success oil-edit" btn-data="<?php echo $oil->id; ?>">Редактировать</td>
+                    <td><button class="btn btn-success oil-edit" data-oil="<?php echo $oil->id; ?>">Редактировать</button> <button type="button" class="btn btn-danger oil-del" data-oil="<?php echo $oil->id; ?>">X</button></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>            
@@ -207,6 +207,9 @@ function co_get_oils(){ //get oils as json object
 
 add_action('wp_ajax_update_oil', function() use ($wpdb){
     check_ajax_referer( 'oc-adm-ajax-nonce', 'nonce');
+    if(! current_user_can('manage_options')) {
+       wp_die("Недостаточно прав доступа","",array('response'=>403));
+    } 
     $oil = (gettype($_POST['oil']) === "string")?@json_decode(stripcslashes($_POST['oil'])):null;
     //catch json err
     if(is_null($oil)){       
@@ -218,32 +221,28 @@ add_action('wp_ajax_update_oil', function() use ($wpdb){
     }
 
     //update co_oils
+    $action="update";
+    $msg = "Обновлена запись: масло";
     if ((int)$oil->id === -1){
         $wpdb->insert("{$wpdb->prefix}co_oils",array("name"=>$oil->name, "o_group"=>$oil->o_group, "iodine"=>$oil->iodine),array("%s","%s","%d"));
         $oil->id = $wpdb->insert_id;
+        $action="insert";
+        $msg = "Добавлена запись: масло";
     }
     else{
-        $wpdb->update("{$wpdb->prefix}co_oils",array("name"=>$oil->name, "o_group"=>$oil->o_group, "iodine"=>$oil->iodine),array('id'=>$oil->id),array("%s","%s","%d"),array("%d"));
+        $wpdb->update("{$wpdb->prefix}co_oils",array("name"=>$oil->name, "o_group"=>$oil->o_group, "iodine"=>$oil->iodine),array('id'=>(int)$oil->id),array("%s","%s","%d"),array("%d"));
     }
-    
-    //$query  = "INSERT INTO {$wpdb->prefix}co_oils (id,name,o_group,iodine) VALUES (%d,%s,%s,%d) ON DUPLICATE KEY UPDATE name = %s, o_group=%s, iodine=%d";
-    //$query = $wpdb->prepare($query, $id, $oil->name, $oil->o_group, $oil->iodine, $oil->name, $oil->o_group, $oil->iodine);
-
-    //$wpdb->query($query);
     
     //update co_oils_acids
     $acid_ids=array();
     if(is_array($oil->acids) && count($oil->acids)){
-        //update
-        
+        //update        
         foreach($oil->acids as $acid){
             $query = "INSERT INTO {$wpdb->prefix}co_oils_acids (id_oil,id_acid, percent) VALUES (%d, %d, %f) ON DUPLICATE KEY UPDATE percent=%f";
             $query = $wpdb->prepare($query,$oil->id,$acid->id,$acid->percent,$acid->percent);
             $wpdb->query($query);
             $acid_ids[]=$acid->id;
-        }        
-        
-
+        }
     }
     //delete acids
     $query = "DELETE FROM {$wpdb->prefix}co_oils_acids WHERE id_oil=%d";
@@ -251,19 +250,32 @@ add_action('wp_ajax_update_oil', function() use ($wpdb){
     $query = $wpdb->prepare($query,$oil->id);
     $wpdb->query($query);
 
-    echo json_encode(array('msg'=>'OK','oil'=>$oil,'query'=>$query));
+    echo json_encode(array('msg'=>$msg,'action'=>$action,'oil'=>$oil));
+    wp_die();
+});
+
+add_action('wp_ajax_remove_oil', function() use ($wpdb){
+    check_ajax_referer( 'oc-adm-ajax-nonce', 'nonce');
+    if(! current_user_can('manage_options')) {
+       wp_die("Недостаточно прав доступа","",array('response'=>403));
+    }
+    $wpdb->delete("{$wpdb->prefix}co_oils",array("id"=>$_POST['oil']),array("%d"));
+    $wpdb->delete("{$wpdb->prefix}co_oils_acids",array("id_oil"=>$_POST['oil']),array("%d"));
+    echo json_encode(array("msg"=>"Удалена запись: масло","oil"=>$_POST['oil']));
     wp_die();
 });
 
 /*--------------------------frontend-----------------------*/
 
  /*  
-  * TODO: echo msg on success update || insert
+  * 
+  * TODO: check correct oil id before send insert|update query, delete oil id from oil name field after for correct work
+  * TODO: after insert|update|delete oils update: 1. calc_oils.list (add, remove or replace element) 2. current modal form (oil name field data) 3. currnet table (update values in row by id)
+  * TODO: echo msg on success update, delete, insert
   * TODO: on success change calc list
-  * TODO: delete oil
   * TODO: edit acids list  
   * TODO: shortcode
-  * TODO: widget  
+  * TODO: widget - get feedback about oil percents 
   *
   * what I know about git commands:
 1. git init - startin git work, create master branch
