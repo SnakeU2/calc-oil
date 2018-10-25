@@ -264,32 +264,3 @@ add_action('wp_ajax_remove_oil', function() use ($wpdb){
     echo json_encode(array("msg"=>"Удалена запись: масло","oil"=>$_POST['oil']));
     wp_die();
 });
-
-/*--------------------------frontend-----------------------*/
-
- /*  
-  * 
-  * TODO: check correct oil id before send insert|update query, delete oil id from oil name field after for correct work
-  * TODO: after insert|update|delete oils update: 1. calc_oils.list (add, remove or replace element) 2. current modal form (oil name field data) 3. currnet table (update values in row by id)
-  * TODO: echo msg on success update, delete, insert
-  * TODO: on success change calc list
-  * TODO: edit acids list  
-  * TODO: shortcode
-  * TODO: widget - get feedback about oil percents 
-  *
-  * what I know about git commands:
-1. git init - startin git work, create master branch
-2. git add <file1>..<fileN> - add files in current dir to local git repo. Use mask.
-3. git status - show not committed|changed|not addedd files
-4. git branch (-a) - show all local branches. -a - all branches w. remote
-5. git commit -am "comment" - fix changes in branch -m comment -a - add|remove|change file structure in branch
-6. git checkout <branch> - switch to branch,q replace all files from current branch commit. Warn! may be lost all latest modifs in old branch? if not commit it
-7. git reflog - all actions !Important to see wich branch|commit now worked
-8. git reset (soft) [--hard] <commit ID> - move head to <commit ID> with --hard change files in woring dir. Not safe!
-9. git reset HEAD@{<num>} - see in reflog actions and choose one of them.
-10.git merge [-ff] <branch> - merge currnt head with <branch> -ff means fastforward, just move cursot to curren commin in branch
-11.git push [-f] <repo name> <remote branch> -  write to remote repository. -f - force
-12.git remote add <name> <remote url> - add repo. default name - origin
-13.git pull <repo name> <remote branch> - load all from remote repo.
-14. git show-branch -a - view all branches
-  * /
